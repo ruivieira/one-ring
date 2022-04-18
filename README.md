@@ -13,12 +13,20 @@ Three different approaches to execute rules.
 ```python
 with Ring("name") as rule_set:
     @rule(ruleset=rule_set, name="R1", condition='subject == "World"')
-    def my_function():
+    def my_function_a():
         print('Hello World')
 
     @rule(ruleset=rule_set, name="R2", condition='subject == "myself"')
-    def my_function():
+    def my_function_b():
         print('Hello to myself!')
+
+    @rule(ruleset=rule_set, name="R3", condition={"any": ['subject == "World"', 'subject == "myself"']})
+    def my_function_c():
+        print('Hello to myself and the World!')
+
+    @rule(ruleset=rule_set, name="R4", condition={"all": ['subject == "World"', 'subject == "myself"']})
+    def my_function_c():
+        print("Can't please everyone...")
 
     rule_set.create_rules_executor()
     print(rule_set.process({"subject" : "World"}))
