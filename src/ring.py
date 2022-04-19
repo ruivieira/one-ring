@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Dict, List, Optional
 
 import requests
 
@@ -9,12 +9,15 @@ class Ring:
         self._name = name
         self._host = host
         self._port = port
-        self._post_headers = {"Accept": "application/json", "Content-Type": "application/json"}
+        self._post_headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
         self._BASE_URL = f"http://{self._host}:{self._port}"
         self._CREATE_RULES_EXECUTOR_URL = f"{self._BASE_URL}/create-rules-executor"
-        self._rules = []
-        self._references = {}
-        self._id = None
+        self._rules: List[Dict] = []
+        self._references: Dict = {}
+        self._id: Optional[int] = None
 
     def __enter__(self):
         return self
@@ -32,8 +35,11 @@ class Ring:
         self._references[name] = func
 
     def create_rules_executor(self) -> Optional[int]:
-        response = requests.post(self._CREATE_RULES_EXECUTOR_URL, data=json.dumps({'host_rules': self._rules}),
-                                 headers=self._post_headers)
+        response = requests.post(
+            self._CREATE_RULES_EXECUTOR_URL,
+            data=json.dumps({"host_rules": self._rules}),
+            headers=self._post_headers,
+        )
         print(response.request.body)
         if response.ok:
             _id = int(response.text)
@@ -43,51 +49,55 @@ class Ring:
             return None
 
     def process(self, data):
-        response = requests.post(self._rules_executor_url(self._id), data=json.dumps(data),
-                                 headers=self._post_headers)
+        if self._id:
+            response = requests.post(
+                self._rules_executor_url(self._id),
+                data=json.dumps(data),
+                headers=self._post_headers,
+            )
 
-        result = json.loads(response.content)
-        if len(result) > 0:
-            for _rule in result:
-                self._references[_rule['ruleName']].__call__()
-        return result
+            result = json.loads(response.content)
+            if len(result) > 0:
+                for _rule in result:
+                    self._references[_rule["ruleName"]].__call__()
+            return result
+        else:
+            raise Exception("There is no associated ruleset id.")
+
+    def rule(self, name, condition):
+        def inner_decorator(f):
+            def wrapped(*args, **kwargs):
+                print("before function")
+                response = f(*args, **kwargs)
+                print("after function")
+                return response
+
+            self.add_rule(name, condition)
+            self.add_reference(name, f)
+            print(f"decorating {f} with argument ruleset={self} and rule={condition}")
+            return wrapped
+
+        return inner_decorator
 
 
-def rule(ruleset, name, condition):
-    def inner_decorator(f):
-        def wrapped(*args, **kwargs):
-            print('before function')
-            response = f(*args, **kwargs)
-            print('after function')
-            return response
+with Ring("name") as rules:
 
-        ruleset.add_rule(name, condition)
-        ruleset.add_reference(name, f)
-        print(f"decorating {f} with argument ruleset={ruleset} and rule={condition}")
-        return wrapped
-
-    return inner_decorator
-
-
-with Ring("name") as rule_set:
-    @rule(ruleset=rule_set, name="R1", condition='subject == "World"')
+    @rules.rule(name="R1", condition='subject == "World"')
     def my_function_a():
-        print('Hello World')
+        print("Hello World")
 
-    @rule(ruleset=rule_set, name="R2", condition='subject == "myself"')
+    @rules.rule(name="R2", condition='subject == "myself"')
     def my_function_b():
-        print('Hello to myself!')
+        print("Hello to myself!")
 
-    @rule(ruleset=rule_set, name="R3", condition={"any": ['subject == "World"', 'subject == "myself"']})
+    @rules.rule(name="R3", condition={"any": ['subject == "World"', 'subject == "myself"']})
     def my_function_c():
-        print('Hello to myself and the World!')
+        print("Hello to myself and the World!")
 
-    @rule(ruleset=rule_set, name="R4", condition={"all": ['subject == "World"', 'subject == "myself"']})
-    def my_function_c():
+    @rules.rule(name="R4", condition={"all": ['subject == "World"', 'subject == "myself"']})
+    def my_function_d():
         print("Can't please everyone...")
 
-    rule_set.create_rules_executor()
-    print(rule_set.process({"subject" : "World"}))
-    print(rule_set.process({"subject": "myself"}))
-
-
+    rules.create_rules_executor()
+    print(rules.process({"subject": "World"}))
+    print(rules.process({"subject": "myself"}))
