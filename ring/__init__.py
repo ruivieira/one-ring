@@ -35,14 +35,17 @@ class Proxy:
         if response.ok:
             _id = int(response.text)
             self._id = _id
+            logging.debug("Created executor with id=%i", _id)
             return _id
         else:
             return None
 
     def process(self, data: Dict) -> Dict:
+        if len(data) == 1:
+            data = [data]
         response = requests.post(
             self._rules_executor_url(self._id),
-            data=json.dumps({"facts": [data]}),
+            data=json.dumps({"facts": data}),
             headers=self._post_headers,
         )
         return json.loads(response.content)
@@ -73,8 +76,8 @@ class Ring:
 
     def create_rules_executor(self):
         self._proxy.create_rules_executor(self._rules)
-        
-    def process(self, data: Dict):
+
+    def process(self, data: Dict) -> Dict:
         if self._proxy.id:
             result = self._proxy.process(data)
             if len(result) > 0:

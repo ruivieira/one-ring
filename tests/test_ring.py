@@ -41,3 +41,26 @@ def test_simple():
         assert len(result2) == 2
         assert result2[0]['ruleName'] == 'R2'
         assert result2[1]['ruleName'] == 'R3'
+
+
+def test_all():
+    with Ring("name") as rules:
+        @rules.all(name="R1", condition=['subject == "World"', 'name == "Rui"'])
+        def my_function_a():
+            logging.info("Hello World and Rui")
+
+        rules.create_rules_executor()
+
+        for value in ["World", "Moon", "Rui"]:
+            result = rules.process({"subject": value})
+            logging.debug(result)
+            assert len(result) == 0
+
+        result = rules.process({"subject": "Moon",  "name": "Rui"})
+        logging.debug(result)
+        assert len(result) == 0
+
+        result = rules.process([{"subject": "World"},  {"name": "Rui"}])
+        logging.debug(result)
+        print(result)
+        assert len(result) == 1
