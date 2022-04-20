@@ -4,6 +4,11 @@
 
 Three different approaches to execute rules.
 
+## Setup
+
+All the examples in this repo require the rules REST server running.
+The specific instructions on how to do this are available [here](https://github.com/mariofusco/drools-yaml-rules).
+
 ## Approach 1: Durable rules proxying
 
 ## Approach 2: REST server wrapping
