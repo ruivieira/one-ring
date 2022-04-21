@@ -56,14 +56,15 @@ def test_all():
             logging.debug(result)
             assert len(result) == 0
 
-        result = rules.process({"subject": "Moon",  "name": "Rui"})
+        result = rules.process({"subject": "Moon", "name": "Rui"})
         logging.debug(result)
         assert len(result) == 0
 
-        result = rules.process([{"subject": "World"},  {"name": "Rui"}])
+        result = rules.process([{"subject": "World"}, {"name": "Rui"}])
         logging.debug(result)
         print(result)
         assert len(result) == 1
+
 
 def test_any():
     with Ring("name") as rules:
@@ -78,19 +79,20 @@ def test_any():
             logging.debug(result)
             assert len(result) == 0
 
-        result = rules.process([{"flavour": "Mint"},  {"flavour": "Vanilla"}])
+        result = rules.process([{"flavour": "Mint"}, {"flavour": "Vanilla"}])
         logging.debug(result)
         assert len(result) == 1
 
-        result = rules.process([{"topping": "Strawberry"},  {"flavour": "Coconut"}])
+        result = rules.process([{"topping": "Strawberry"}, {"flavour": "Coconut"}])
         logging.debug(result)
         print(result)
         assert len(result) == 1
 
-        result = rules.process([{"topping": "Chocolate"},  {"flavour": "Coffee"}])
+        result = rules.process([{"topping": "Chocolate"}, {"flavour": "Coffee"}])
         logging.debug(result)
         print(result)
         assert len(result) == 0
+
 
 def test_multiple():
     rules1 = Ring("rules1")
@@ -103,10 +105,12 @@ def test_multiple():
     def my_function_a():
         nonlocal processor
         processor = rules1
+
     @rules1.rule(name="R2", condition='processor == 2')
     def my_function_b():
         nonlocal processor
         processor = rules2
+
     @rules1.rule(name="R3", condition='processor == 3')
     def my_function_c():
         nonlocal processor
@@ -121,3 +125,39 @@ def test_multiple():
 
     processor.create_rules_executor()
     processor.process({"name": "me"})
+
+
+def test_rules_assembly():
+    with Ring("name") as rules:
+        @rules.all(name="R1", condition=['subject == "World"', 'name == "Rui"'])
+        def my_function_a():
+            logging.info("Hello World and Rui")
+
+        rules.create_rules_executor()
+
+        for value in ["World", "Moon", "Rui"]:
+            result = rules.process({"subject": value})
+            logging.debug(result)
+            assert len(result) == 0
+
+        rules_struct = rules.rules
+        assert "host_rules" in rules_struct
+        host_rules = rules_struct['host_rules']
+        assert len(host_rules) == 1
+        assert host_rules[0]['name'] == 'R1'
+        assert 'condition' in host_rules[0]
+        assert 'all' in host_rules[0]['condition']
+        assert len(host_rules[0]['condition']['all']) == 2
+
+
+def test_from_json():
+    data = '{"host_rules": [{"name": "R1", "condition": {"all": ["subject == \\\"World\\\"", "name == \\\"Rui\\\""]}}]}'
+    json_data = json.loads(data)
+    rules = Ring.fromJSON("from_json", json_data)
+    rules.create_rules_executor()
+    result = rules.process([{"subject": "World"}, {"name": "Rui"}])
+    assert len(result) == 1
+    print(result)
+    assert result[0]['ruleName'] == "R1"
+    assert result[0]['facts']['name'] == "Rui"
+    assert result[0]['facts']['subject'] == "World"

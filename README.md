@@ -63,6 +63,31 @@ def my_function_a():
     # do something
 ```
 
+### Serialising
+
+Rules can be read/written with JSON. For instance, to store a rules (after defining it as in the examples above)
+
+```python
+data = rules.rules # returns ruleset as a JSON object
+
+# save to Redis, MongoDB, disk, etc...
+```
+
+To create a ruleset from JSON use the `fromJSON` static method:
+
+```python
+rules_json = ... # read JSON from Redis, MongoDB, Web, disk, etc...
+
+rules = Ring.fromJSON("my_rules", rules_json)
+```
+
+We then create the processor on the server and process them as usual
+
+```python
+rules.create_rules_executor()
+rules.process(some_data)
+```
+
 ### Shenanigans
 
 Using rules to choose the rules processor

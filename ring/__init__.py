@@ -25,10 +25,10 @@ class Proxy:
     def _rules_executor_url(self, id: int) -> str:
         return f"{self._BASE_URL}/rules-executors/{id}/process"
 
-    def create_rules_executor(self, rules) -> Optional[int]:
+    def create_rules_executor(self, rules: Dict) -> Optional[int]:
         response = requests.post(
             self._CREATE_RULES_EXECUTOR_URL,
-            data=json.dumps({"host_rules": rules}),
+            data=json.dumps(rules),
             headers=self._post_headers,
         )
         print(response.request.body)
@@ -71,18 +71,24 @@ class Ring:
     def add_rule(self, name, condition):
         self._rules.append({"name": name, "condition": condition})
 
+    @property
+    def rules(self):
+        return {"host_rules": self._rules}
+
     def add_reference(self, name, func):
         self._references[name] = func
 
     def create_rules_executor(self):
-        self._proxy.create_rules_executor(self._rules)
+        self._proxy.create_rules_executor(self.rules)
 
     def process(self, data: Dict) -> Dict:
         if self._proxy.id:
             result = self._proxy.process(data)
             if len(result) > 0:
                 for _rule in result:
-                    self._references[_rule["ruleName"]].__call__()
+                    name = _rule["ruleName"]
+                    if name in self._references:
+                        self._references[name].__call__()
             return result
         else:
             raise Exception("There is no associated ruleset id.")
@@ -134,3 +140,10 @@ class Ring:
             return wrapped
 
         return inner_decorator
+
+    @staticmethod
+    def fromJSON(name: str, data):
+        ring = Ring(name)
+        for rule in data['host_rules']:
+            ring.add_rule(rule['name'], rule['condition'])
+        return ring
