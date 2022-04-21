@@ -122,3 +122,7 @@ Using rules to choose the rules processor
     processor.create_rules_executor()
     processor.process({"name": "me"})
 ```
+
+### More
+
+More examples can be found in the unit tests: [tests/test_ring.py](tests/test_ring.py).
