@@ -2,18 +2,24 @@
 
 > One Ring to *rule* them all
 
-Three different approaches to execute rules.
-
 ## Setup
 
 All the examples in this repo require the rules REST server running.
 The specific instructions on how to do this are available [here](https://github.com/mariofusco/drools-yaml-rules).
 
-## Approach 1: Durable rules proxying
+Install the Python dependencies with:
 
-## Approach 2: REST server wrapping
+```shell
+pip install -r requirements.txt
+```
 
-### Example
+From the root of the project run
+
+```shell
+python -m pytest
+```
+
+## Example
 
 ```python
 with Ring("name") as rules:
@@ -39,4 +45,20 @@ with Ring("name") as rules:
     print(rules.process({"subject": "myself"}))
 ```
 
-## Approach 3: Drools bindings
+### Syntactic sugar
+
+The `@all` annotation applies to all logic:
+
+```python
+@rules.all(name="R1", condition=['subject == "World"', 'name == "Rui"'])
+def my_function_a():
+    # do something
+```
+
+Similarly the `@any` annotation adds the _any_ operator.
+
+```python
+@rules.any(name="R1", condition=['subject == "World"', 'name == "Rui"'])
+def my_function_a():
+    # do something
+```

@@ -118,3 +118,19 @@ class Ring:
             return wrapped
 
         return inner_decorator
+
+    def any(self, name, condition):
+        def inner_decorator(f):
+            def wrapped(*args, **kwargs):
+                response = f(*args, **kwargs)
+                return response
+
+            self.add_rule(name, {"any": condition})
+            self.add_reference(name, f)
+            logging.debug(
+                "decorating %s with argument ruleset=%s and rule=%s",
+                f, self, condition
+            )
+            return wrapped
+
+        return inner_decorator

@@ -64,3 +64,30 @@ def test_all():
         logging.debug(result)
         print(result)
         assert len(result) == 1
+
+def test_any():
+    with Ring("name") as rules:
+        @rules.any(name="R1", condition=['flavour == "Vanilla"', 'topping == "Strawberry"'])
+        def my_function_a():
+            logging.info("Vanilla or strawberry")
+
+        rules.create_rules_executor()
+
+        for value in ["Chocolate", "Coconut", "Mint"]:
+            result = rules.process({"flavour": value})
+            logging.debug(result)
+            assert len(result) == 0
+
+        result = rules.process([{"flavour": "Mint"},  {"flavour": "Vanilla"}])
+        logging.debug(result)
+        assert len(result) == 1
+
+        result = rules.process([{"topping": "Strawberry"},  {"flavour": "Coconut"}])
+        logging.debug(result)
+        print(result)
+        assert len(result) == 1
+
+        result = rules.process([{"topping": "Chocolate"},  {"flavour": "Coffee"}])
+        logging.debug(result)
+        print(result)
+        assert len(result) == 0
