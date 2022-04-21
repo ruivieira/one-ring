@@ -62,3 +62,38 @@ Similarly the `@any` annotation adds the _any_ operator.
 def my_function_a():
     # do something
 ```
+
+### Shenanigans
+
+Using rules to choose the rules processor
+
+```python
+    rules1 = Ring("rules1")
+    rules2 = Ring("rules2")
+    rules3 = Ring("rules3")
+
+    processor = None
+
+    @rules1.rule(name="R1", condition='processor == 1')
+    def my_function_a():
+        nonlocal processor
+        processor = rules1
+    @rules1.rule(name="R2", condition='processor == 2')
+    def my_function_b():
+        nonlocal processor
+        processor = rules2
+    @rules1.rule(name="R3", condition='processor == 3')
+    def my_function_c():
+        nonlocal processor
+        processor = rules3
+
+    rules1.create_rules_executor()
+    rules1.process({"processor": 3})
+
+    @processor.rule(name="R1", condition='name == "me"')
+    def my_function_d():
+        print("Hello me!")
+
+    processor.create_rules_executor()
+    processor.process({"name": "me"})
+```
