@@ -161,3 +161,41 @@ def test_from_json():
     assert result[0]['ruleName'] == "R1"
     assert result[0]['facts']['name'] == "Rui"
     assert result[0]['facts']['subject'] == "World"
+
+def test_args():
+    with Ring("name") as rules:
+        @rules.rule(name="R1", condition='subject == "World"')
+        def my_function_a(result):
+            logging.info(result)
+            assert result[0]['ruleName'] == 'R1'
+
+        @rules.rule(name="R2", condition='subject == "myself"')
+        def my_function_b():
+            logging.info("Hello to myself!")
+
+        @rules.rule(
+            name="R3", condition={"any": ['subject == "World"', 'subject == "myself"']}
+        )
+        def my_function_c(result):
+            logging.info(result)
+            assert result[0]['ruleName'] == 'R3'
+
+        @rules.rule(
+            name="R4", condition={"all": ['subject == "World"', 'subject == "myself"']}
+        )
+        def my_function_d():
+            logging.info("Can't please everyone...")
+
+        rules.create_rules_executor()
+
+        result1 = rules.process({"subject": "World"})
+        logging.debug(result1)
+        assert len(result1) == 2
+        assert result1[0]['ruleName'] == 'R1'
+        assert result1[1]['ruleName'] == 'R3'
+
+        result2 = rules.process({"subject": "myself"})
+        logging.debug(result2)
+        assert len(result2) == 2
+        assert result2[0]['ruleName'] == 'R2'
+        assert result2[1]['ruleName'] == 'R3'

@@ -45,6 +45,33 @@ with Ring("name") as rules:
     print(rules.process({"subject": "myself"}))
 ```
 
+### Method args
+
+You can consume the result from the rules server the referenced method by adding an
+argument. 
+
+This is **optional**.
+If a result is not present, the result will not be passed. For instance:
+
+```python
+with Ring("name") as rules:
+
+    @rules.rule(name="R1", condition='subject == "World"')
+    def my_function_a(result):
+        """I can get a result"""
+        print(result) # [{'ruleName': 'R1', 'facts': {'subject': 'World'}}]
+
+    @rules.rule(name="R2", condition='subject == "myself"')
+    def my_function_b():
+        """I'll ignore the result"""
+        print("Hello to myself!")
+
+    rules.create_rules_executor()
+    print(rules.process({"subject": "World"}))
+    print(rules.process({"subject": "myself"}))
+```
+
+
 ### Syntactic sugar
 
 The `@all` annotation applies to all logic:

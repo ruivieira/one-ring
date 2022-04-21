@@ -88,7 +88,11 @@ class Ring:
                 for _rule in result:
                     name = _rule["ruleName"]
                     if name in self._references:
-                        self._references[name].__call__()
+                        _func = self._references[name]
+                        if _func.__code__.co_argcount > 0:
+                            _func.__call__(result)
+                        else:
+                            _func.__call__()
             return result
         else:
             raise Exception("There is no associated ruleset id.")
