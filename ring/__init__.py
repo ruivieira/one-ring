@@ -105,10 +105,6 @@ class Ring:
 
             self.add_rule(name, condition)
             self.add_reference(name, f)
-            logging.debug(
-                "decorating %s with argument ruleset=%s and rule=%s",
-                f, self, condition
-            )
             return wrapped
 
         return inner_decorator
@@ -147,7 +143,7 @@ class Ring:
 
     @staticmethod
     def fromJSON(name: str, data):
-        ring = Ring(name)
+        ring = Ring(name, proxy=None)
         for rule in data['host_rules']:
             ring.add_rule(rule['name'], rule['condition'])
         return ring

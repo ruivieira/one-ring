@@ -178,7 +178,10 @@ def test_args():
         )
         def my_function_c(result):
             logging.info(result)
-            assert result[0]['ruleName'] == 'R3'
+            print("args")
+            print(result)
+            assert result[0]['ruleName'] == 'R1' or result[0]['ruleName'] == 'R2'
+            assert result[1]['ruleName'] == 'R3'
 
         @rules.rule(
             name="R4", condition={"all": ['subject == "World"', 'subject == "myself"']}
